@@ -6,18 +6,16 @@ This program sends a file.
 
 1. Download code
 
-2. Enter a host and a port.
+2. Give the script executable rights
 
-3. The file will be sent to host desktop.
+3. type sendFile.py -t (your IP) -p (your port) -f (your file dir)
+
+   a. exmaple -t 192.168.1.1 -p 5000 -f C://hello/notepad.txt
 
 ### Prerequisites
 
 Python 2.4 and above
 
-### Installing
-
-1. Give scrip executable.
-2............ incomplete
 
 ## Built With
 
