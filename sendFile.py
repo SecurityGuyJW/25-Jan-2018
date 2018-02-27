@@ -1,19 +1,19 @@
 import sys
+import os
 import socket
 import getopt
-import ntpath
-import random
-import time
 import threading
 
+target       = 0
+port         = 0
+connections  = 0
+toggle       = True
+toggle_l     = True
+loop         = True
+listen       = False
 
-target = 0
-port = 0
-listen = False
-destination = ""
-conn = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-
-
+pullFrom        = ""
+placeIn         = "/home/ubuntu/Desktop/dump"
 
 def instruction():
 
@@ -24,62 +24,168 @@ def instruction():
     print("")
 
     print("Example: -t 192.168.1.1 -p 5000 -f urs/somefile/example.txt")
+    
 
+#***********************************************************************************************************************
+def serverSide():
 
-def server():
     global port
-    global conn
+    global toggle
+    global connections
 
-    destination = "/home/ubuntu/Desktop/Juans_Scripts/dump"
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    filename = random.randrange(1,50)
+    server.bind(("",int(port)))
 
-    destination = destination + '/' + str(filename)
+    server.listen(5)
 
-    conn.bind(("",int(port)))
+    print("file transfer server waiting for connections...")
 
-    conn.listen(5)
+    def clientHandler(client):
 
-    server, var = conn.accept()
+        handlePayload(client,placeIn)
 
-    #gets the leaf of the file
+    while True:
+
+        try:
+
+            client,var = server.accept()
+
+            connections += 1
+
+            print("")
+            print("")
+            print("")
+            print(client)
 
 
-    # add conversion here for other OS
+            print("connection ACCEPTED!")
 
-    with open(destination, "wb") as fw:
+            print("successful connnections:",connections)
 
-        data = server.recv(4060)
+            print("IP:" and var[0])
+            print("Port:" and var[1])
 
-        fw.write(data)
+            fileTransferServer = threading.Thread(target=clientHandler,args=(client,))
 
-        fw.close()
+            fileTransferServer.start()
 
-def client():
+        except Exception as err:
+
+            print(err)
+
+            break
+
+
+def handlePayload(client, placeIn):
+
+    global buffer
+    global toggle
+
+    if toggle:
+
+        value = client.recv(1020)
+
+        buffer = int(value)
+
+        print("file buffer is, %d" %buffer)
+
+        toggle = False
+
+        client.close()
+
+    else:
+
+        print("")
+        print("")
+
+        file_name = raw_input("Enter file name with correct extension... \nFile:")
+
+        payload = client.recv(buffer)
+
+        print("")
+        print("")
+        print("<--------------file location------------->")
+
+        print(placeIn + file_name)
+
+        file = open(placeIn + file_name, "wb")
+
+        print("dumping a file with size %d" % buffer)
+
+        file.write(payload)
+
+        print("File transfer complete...")
+
+        toggle = True
+
+        file.close()
+
+        client.close()
+
+        os._exit(0)
+
+
+#***********************************************************************************************************************
+
+def clientSide():
+
     global target
     global port
-    global destination
+    global pullFrom
 
-    destination = str(destination)
+    pullFrom = str(pullFrom)
 
-    conn.connect((target,int(port)))
+    sendBuff(target, port, pullFrom)
 
-    with open(destination, 'rb') as fs:
+    sendFile(target, port, pullFrom)
 
-        data = fs.read(1024)
 
-        conn.send(data)
+def sendBuff(target,port,pullFrom):
 
-        fs.close()
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+    client.connect((target, int(port)))
+
+    data = open(pullFrom, "rb")
+
+    payload = data.read()
+
+    buffer = converToBuffer(payload)
+
+    client.send((buffer))
+
+    data.close()
+
+    client.close()
+
+def sendFile(target,port,pullFrom):
+
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  #
+
+    client.connect((target, int(port)))
+
+    data = open(pullFrom, "rb")
+
+    payload = data.read()
+
+    client.send(payload)
+
+    data.close()
+
+    client.close()
+
+def converToBuffer(data):
+
+    size = len(data)
+    return str(size)
 
 def main():
 
     global listen
     global target
     global port
-    global destination
-    global conn
+    global pullFrom
 
     if not len(sys.argv[1:]):
 
@@ -99,7 +205,7 @@ def main():
             port = a
 
         elif o in ("-f"):
-            destination = a
+            pullFrom = a
 
         elif o in ("-l"):
             listen = True
@@ -112,15 +218,14 @@ def main():
 
     if listen == True:
 
-        server()
+        serverSide()
 
     else:
 
-        client()
+        clientSide()
 
-    conn.close()
+    print("done")
+    
+ #***********************************************************************************************************************
 
 main()
-
-
-
