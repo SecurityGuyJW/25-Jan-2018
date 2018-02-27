@@ -1,6 +1,6 @@
 # Project Title
 
-Utilizing client server functionality we can send a file from one file to another. 
+Utilizing client server functionality we can send a file from one endpoint  to another. 
 
 ## How it works
 
